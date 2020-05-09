@@ -54,9 +54,8 @@ RUN service tftpd-hpa restart
 COPY buildOnDocker.sh /linux/buildOnDocker.sh
 RUN chmod a+x /linux/buildOnDocker.sh
 
-# COPY in the CCES debian package onto the VM
+# COPY in the CCES debian package onto the VM - ucomment this to save time
 # COPY adi-CrossCoreEmbeddedStudio-linux-x86-2.8.3.deb /linux
-COPY adi-Cross*.deb /linux
 
 # Link python2.7 to python 2
 RUN ln -s /usr/bin/python2.7 /usr/bin/python2
