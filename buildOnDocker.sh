@@ -74,5 +74,6 @@ cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > source
 source ./setup-environment -m adsp-${ARCH}-${BOARD}
 
 bitbake adsp-sc5xx-full
+bitbake adsp-sc5xx-ramboot
 
 
