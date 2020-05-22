@@ -67,4 +67,4 @@ ARG UID=1000
 ARG GID=1000
 ARG PW=bob
 
-RUN useradd -m ${USER} --uid=${UID} && echo "${USER}:${PW}" | chpasswd && adduser ${USER} sudo
+RUN useradd -m -s /bin/bash ${USER} --uid=${UID} && echo "${USER}:${PW}" | chpasswd && adduser ${USER} sudo

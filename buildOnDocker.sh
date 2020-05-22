@@ -106,4 +106,4 @@ cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > source
 # Set up environment to build
 source ./setup-environment -m adsp-${SCRIPT_TARGET}
 
-bitbake ${BUILD_ARGS}
+bitbake -q ${BUILD_ARGS}
