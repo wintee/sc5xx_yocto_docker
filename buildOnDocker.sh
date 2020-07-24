@@ -4,7 +4,7 @@
 # This script is distributed under the standard MIT Licnse.
 # Configure these for your build
 
-DEV_BRANCH=develop/yocto-1.0.0
+DEV_BRANCH=release/yocto-1.0.0
 GIT_EMAIL="you@dev.null"
 GIT_NAME="Fill in your name and e-mail"
 SCRIPT_TARGET=""
