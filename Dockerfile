@@ -39,7 +39,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
     pylint3 \
     python2.7 \
     vim \
-    ssh
+    ssh \
+    libusb-1.0.0
 
 # Set up TFTP
 COPY tftpd-hpa /etc/default/tftpd-hpa
