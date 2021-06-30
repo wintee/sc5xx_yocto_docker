@@ -3,12 +3,19 @@
 # Copyright David Gibson <wintee@gmail.com> All Rights Reserved.
 # This script is distributed under the standard MIT Licnse.
 # Configure these for your build
-
-DEV_BRANCH=release/yocto-1.0.0
-GIT_EMAIL="you@dev.null"
-GIT_NAME="Fill in your name and e-mail"
+set -x
+echo "I AM RUNNING AS:"
+whoami
+id
+REPO_URL=https://github.com/analogdevicesinc/lnxdsp-repo-manifest.git
+# GITHUB_USER=adi-linux-test
+# GITHUB_PASSWORD="`cat repopassword`"
+DEV_BRANCH=develop/g-xp
+GIT_EMAIL="win.tee@gmail.com"
+GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
 BUILD_ARGS=""
+BUILD_DIR="/linux"
 
 function usage() {
     echo "$0: -m <machine> <bitbake commands>"
@@ -17,6 +24,7 @@ function usage() {
     echo "          sc589-ezkit"
     echo "          sc584-ezkit"
     echo "          sc573-ezkit"
+    echo "          sc594-som-ezkit"
     echo ""
     echo "Bitbake commands are usually the commands to build ADI images:"
     echo "          adsp-sc5xx-full"
@@ -43,11 +51,10 @@ shift 2
 BUILD_ARGS="$*"
 
 # Configure these, not so much
-#  CCES 2.8.3 is a known good version for Linux, don't update it
-export CCES_VERSION=2.8.3
 #  Locale used to stop python moaning
 export SET_LANG=en_US.UTF-8
 
+cd ${BUILD_DIR}
 WD=`pwd`
 
 # Do we need to use sudo
@@ -58,27 +65,10 @@ then
 fi
 
 # Setup locale to stop python bitching
-${SCMD} locale-gen ${SET_LANG}
-update-locale LC_ALL=${SET_LANG} LANG=${SET_LANG}
-export LANG=${SET_LANG}
+# ${SCMD} locale-gen ${SET_LANG}
+# update-locale LC_ALL=${SET_LANG} LANG=${SET_LANG}
+# export LANG=${SET_LANG}
 
-# Install CCES, needed for open source tools
-if [ ! -d /opt/analog/cces/${CCES_VERSION} ]
-then
-    CCESFILE=adi-CrossCoreEmbeddedStudio-linux-x86-${CCES_VERSION}.deb
-    if [ ! -e ${CCESFILE} ]
-    then
-        echo "Downloading CrossCore Embedded Studio ${CCES_VERSION}"
-        wget -q http://download.analog.com/tools/CrossCoreEmbeddedStudio/Releases/Release_${CCES_VERSION}/${CCESFILE}
-    fi 
-    echo "Installing CrossCore Embedded Studio ${CCES_VERSION}"
-    export DEBIAN_FRONTEND=noninteractive
-    echo "adi-cces-${CCES_VERSION} adi-cces-${CCES_VERSION}/run-ocd-config boolean true" | debconf-set-selections
-    echo "adi-cces-${CCES_VERSION} adi-cces-${CCES_VERSION}/accept-sla boolean true" | debconf-set-selections    
-    ${SCMD} dpkg -i ${CCESFILE}
-fi
-
-export PATH=/opt/analog/cces/${CCES_VERSION}/ARM/arm-none-eabi-bin:${PATH}
 # Set up repo tool
 if [ ! -e ${WD}/bin/repo ]
 then
@@ -92,18 +82,20 @@ git config --global user.email "${GIT_EMAIL}"
 git config --global user.name "${GIT_NAME}"
 # Disable colour output or the repo init hangs waiting on input
 git config --global color.ui false
+# git config --global credential.helper cache
+# echo https://${GITHUB_USER}:${GITHUB_PASSWORD}@github.com > ~/.git-credentials
 
 # Sync repos
 if [ ! -d ${WD}/.repo ]
 then
-    ${WD}/bin/repo init -u https://github.com/analogdevicesinc/lnxdsp-repo-manifest.git -b ${DEV_BRANCH}
+    ${WD}/bin/repo init -u ${REPO_URL} -b ${DEV_BRANCH}
 fi
 ${WD}/bin/repo sync
 
 # We're going to build as root and I don't care what you say!
-cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > sources/poky/meta/conf/sanity.conf
-
+# cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > sources/poky/meta/conf/sanity.conf
+ 
 # Set up environment to build
-source ./setup-environment -m adsp-${SCRIPT_TARGET}
+source ./setup-environment -m adsp-${SCRIPT_TARGET} -b .
 
 bitbake -q ${BUILD_ARGS}

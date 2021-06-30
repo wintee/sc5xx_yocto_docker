@@ -1,5 +1,5 @@
-# Use offical Ubuntu 18.04 Release as parent image
-FROM ubuntu:18.04
+# Use offical Ubuntu 20.04 Release as parent image
+FROM ubuntu:20.04
 
 # Set the directory for building the product
 WORKDIR /linux
@@ -37,25 +37,31 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
     python3-git \
     python3-jinja2 \
     pylint3 \
-    python2.7
-
-RUN dpkg --add-architecture i386
-# Install packages required to run the 32-bit binaries on our 64-bit host. Required for CCES
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 libz1:i386 wget
-# Install the packages required to build and install Linux, as documented in the Linux Add-In User Guide
+    python2.7 \
+    vim \
+    ssh
 
 # Set up TFTP
 COPY tftpd-hpa /etc/default/tftpd-hpa
+COPY repopassword /linux/repopassword
 RUN mkdir /tftpboot
 RUN chmod 777 /tftpboot
 RUN service tftpd-hpa restart
 
 # Set up the development space
+RUN mkdir -p /linux
+RUN chmod a+rwx /linux
 COPY buildOnDocker.sh /linux/buildOnDocker.sh
 RUN chmod a+x /linux/buildOnDocker.sh
 
-# COPY in the CCES debian package onto the VM - ucomment this to save time
-# COPY adi-CrossCoreEmbeddedStudio-linux-x86-2.8.3.deb /linux
+# Set up the rules for accesing github via the http port
+RUN mkdir /root/.ssh
+RUN chmod 0700 /root/.ssh
+COPY config /root/.ssh/config
+# RUN ssh-keyscan github.com > /root/.ssh/known_hosts
+COPY id* /root/.ssh/
+RUN chmod 600 /root/.ssh/id_*
+
 
 # Link python2.7 to python 2
 RUN ln -s /usr/bin/python2.7 /usr/bin/python2
