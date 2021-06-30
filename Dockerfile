@@ -43,7 +43,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
 
 # Set up TFTP
 COPY tftpd-hpa /etc/default/tftpd-hpa
-COPY repopassword /linux/repopassword
 RUN mkdir /tftpboot
 RUN chmod 777 /tftpboot
 RUN service tftpd-hpa restart
