@@ -57,9 +57,6 @@ RUN chmod a+x /linux/buildOnDocker.sh
 RUN mkdir /root/.ssh
 RUN chmod 0700 /root/.ssh
 COPY config /root/.ssh/config
-# RUN ssh-keyscan github.com > /root/.ssh/known_hosts
-COPY id* /root/.ssh/
-RUN chmod 600 /root/.ssh/id_*
 
 # Link python2.7 to python 2
 RUN ln -s /usr/bin/python2.7 /usr/bin/python2
