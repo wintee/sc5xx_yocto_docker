@@ -62,7 +62,6 @@ COPY config /root/.ssh/config
 COPY id* /root/.ssh/
 RUN chmod 600 /root/.ssh/id_*
 
-
 # Link python2.7 to python 2
 RUN ln -s /usr/bin/python2.7 /usr/bin/python2
 RUN ln -s /usr/bin/python2.7 /usr/bin/python
@@ -74,3 +73,5 @@ ARG GID=1000
 ARG PW=bob
 
 RUN useradd -m -s /bin/bash ${USER} --uid=${UID} && echo "${USER}:${PW}" | chpasswd && adduser ${USER} sudo
+# Make sure bob has the power to do whatever they want in the container
+RUN echo "${USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers

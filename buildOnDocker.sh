@@ -65,9 +65,9 @@ then
 fi
 
 # Setup locale to stop python bitching
-# ${SCMD} locale-gen ${SET_LANG}
-# update-locale LC_ALL=${SET_LANG} LANG=${SET_LANG}
-# export LANG=${SET_LANG}
+${SCMD} locale-gen ${SET_LANG}
+${SCMD} update-locale LC_ALL=${SET_LANG} LANG=${SET_LANG}
+export LANG=${SET_LANG}
 
 # Set up repo tool
 if [ ! -e ${WD}/bin/repo ]
@@ -96,6 +96,4 @@ ${WD}/bin/repo sync
 # cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > sources/poky/meta/conf/sanity.conf
  
 # Set up environment to build
-source ./setup-environment -m adsp-${SCRIPT_TARGET} -b .
-
-bitbake -q ${BUILD_ARGS}
+source ./setup-environment -m adsp-${SCRIPT_TARGET} -b  && bitbake -q ${BUILD_ARGS}
