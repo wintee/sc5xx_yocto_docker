@@ -3,14 +3,12 @@
 # Copyright David Gibson <wintee@gmail.com> All Rights Reserved.
 # This script is distributed under the standard MIT Licnse.
 # Configure these for your build
-set -x
 echo "I AM RUNNING AS:"
 whoami
 id
+echo " "
 REPO_URL=https://github.com/analogdevicesinc/lnxdsp-repo-manifest.git
-# GITHUB_USER=adi-linux-test
-# GITHUB_PASSWORD="`cat repopassword`"
-DEV_BRANCH=develop/g-xp
+REPO_BRANCH=develop/g-xp
 GIT_EMAIL="win.tee@gmail.com"
 GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
@@ -18,7 +16,7 @@ BUILD_ARGS=""
 BUILD_DIR="/linux"
 
 function usage() {
-    echo "$0: -m <machine> <bitbake commands>"
+    echo "$0: -r <repo> -b <branch> -m <machine> <bitbake commands>"
     echo "     where machine is one of:"
     echo "          sc589-mini"
     echo "          sc589-ezkit"
@@ -32,32 +30,58 @@ function usage() {
     echo "          u-boot-adi"
     echo "          linux-adi"
     echo "  Please refer to wiki.analog.com/resources/tools-software/linuxdsp for more details"
+    echo "  Default repo is ${REPO_URL} but you still need to specify it with -r "
     exit $1
 }
 # Parse default args
-if [ $# -lt 3 ]
+if [ $# -lt 7 ]
 then
   echo "Error: Please provide correct arguments to the script"
   usage -1
 fi
+if [  "$1" == "-r" ]
+then
+  shift
+  REPO_URL=$1
+  shift
+else
+  echo "Error: Require a repo to be provided"
+  usage -2
+fi
+if [ "$1" == "-b" ]
+then
+  shift
+  REPO_BRANCH=$1
+  shift
+else
+  echo "Error: Require a branch"
+  usage -3
+fi
 if [ "$1" == "-m" ]
 then
-  SCRIPT_TARGET=$2
+  shift
+  SCRIPT_TARGET=$1
+  shift
 else
-  echo "Please provide a valid machine"
+  echo "Error: Please provide a valid machine"
   usage -1
 fi
-shift 2
 BUILD_ARGS="$*"
 
-# Configure these, not so much
+echo "    REPO: ${REPO_URL}"
+echo "  BRANCH: ${REPO_BRANCH}"
+echo "PLATFORM: ${SCRIPT_TARGET}"
+echo "BB IMAGE: ${BUILD_ARGS}"
+echo "Sleeping for 5. Hit Ctrl-C if this looks wrong"
+sleep 5
+
 #  Locale used to stop python moaning
 export SET_LANG=en_US.UTF-8
 
 cd ${BUILD_DIR}
 WD=`pwd`
 
-# Do we need to use sudo
+# Do we need to use sudo, you really shouldn't be running as root. See the readme
 SCMD=""
 if [ "`whoami`" != "root" ]
 then
@@ -82,18 +106,13 @@ git config --global user.email "${GIT_EMAIL}"
 git config --global user.name "${GIT_NAME}"
 # Disable colour output or the repo init hangs waiting on input
 git config --global color.ui false
-# git config --global credential.helper cache
-# echo https://${GITHUB_USER}:${GITHUB_PASSWORD}@github.com > ~/.git-credentials
 
 # Sync repos
 if [ ! -d ${WD}/.repo ]
 then
-    ${WD}/bin/repo init -u ${REPO_URL} -b ${DEV_BRANCH}
+    ${WD}/bin/repo init -u ${REPO_URL} -b ${REPO_BRANCH}
 fi
 ${WD}/bin/repo sync
 
-# We're going to build as root and I don't care what you say!
-# cat sources/poky/meta/conf/sanity.conf | sed -e 's/^INHERIT/# INHERIT/' > sources/poky/meta/conf/sanity.conf
- 
 # Set up environment to build
 source ./setup-environment -m adsp-${SCRIPT_TARGET} -b  && bitbake -q ${BUILD_ARGS}
