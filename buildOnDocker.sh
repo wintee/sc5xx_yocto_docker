@@ -107,6 +107,8 @@ git config --global user.name "${GIT_NAME}"
 # Disable colour output or the repo init hangs waiting on input
 git config --global color.ui false
 
+git config --global credential.helper store
+
 # Sync repos
 if [ ! -d ${WD}/.repo ]
 then
