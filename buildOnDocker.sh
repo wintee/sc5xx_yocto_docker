@@ -13,7 +13,8 @@ GIT_EMAIL="win.tee@gmail.com"
 GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
 BUILD_ARGS=""
-BUILD_DIR="/linux"
+WORK_DIR="/linux"
+BUILD_DIR="build"
 
 function usage() {
     echo "$0: -r <repo> -b <branch> -m <machine> <bitbake commands>"
@@ -78,7 +79,7 @@ sleep 5
 #  Locale used to stop python moaning
 export SET_LANG=en_US.UTF-8
 
-cd ${BUILD_DIR}
+cd ${WORK_DIR}
 WD=`pwd`
 
 # Do we need to use sudo, you really shouldn't be running as root. See the readme
@@ -104,8 +105,12 @@ fi
 # Set up git credentials
 git config --global user.email "${GIT_EMAIL}"
 git config --global user.name "${GIT_NAME}"
-# Disable colour output or the repo init hangs waiting on input
+# Disable colour output or the repo init hangs waiting on input and cache username and password
 git config --global color.ui false
+git config --global credential.helper store
+
+# change ownership of build directory to bob or he can't write to it
+${SCMD} chown -R `whoami` ${BUILD_DIR}
 
 # Sync repos
 if [ ! -d ${WD}/.repo ]
@@ -115,4 +120,4 @@ fi
 ${WD}/bin/repo sync
 
 # Set up environment to build
-source ./setup-environment -m adsp-${SCRIPT_TARGET} -b  && bitbake -q ${BUILD_ARGS}
+source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR} && bitbake -q ${BUILD_ARGS}
