@@ -13,7 +13,7 @@ GIT_EMAIL="win.tee@gmail.com"
 GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
 BUILD_ARGS=""
-BUILD_DIR="/linux"
+BUILD_DIR="/linux/build"
 
 function usage() {
     echo "$0: -r <repo> -b <branch> -m <machine> <bitbake commands>"
