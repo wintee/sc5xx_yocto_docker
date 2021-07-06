@@ -109,7 +109,7 @@ git config --global user.name "${GIT_NAME}"
 git config --global color.ui false
 git config --global credential.helper store
 
-# change ownership of build directory to bob or we can't write to it
+# change ownership of build directory to bob or he can't write to it
 ${SCMD} chown -R `whoami` ${BUILD_DIR}
 
 # Sync repos
