@@ -13,6 +13,7 @@ GIT_EMAIL="win.tee@gmail.com"
 GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
 BUILD_ARGS=""
+WORK_DIR="/linux"
 BUILD_DIR="build"
 
 function usage() {
@@ -78,7 +79,7 @@ sleep 5
 #  Locale used to stop python moaning
 export SET_LANG=en_US.UTF-8
 
-cd ${BUILD_DIR}
+cd ${WORK_DIR}
 WD=`pwd`
 
 # Do we need to use sudo, you really shouldn't be running as root. See the readme
