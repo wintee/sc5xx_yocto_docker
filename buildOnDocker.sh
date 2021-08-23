@@ -15,9 +15,11 @@ SCRIPT_TARGET=""
 BUILD_ARGS=""
 WORK_DIR="/linux"
 BUILD_DIR="build"
+GH_REPO_USER=""
+GH_REPO_PASS=""
 
 function usage() {
-    echo "$0: -r <repo> -b <branch> -m <machine> <bitbake commands>"
+    echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>] <bitbake commands>"
     echo "     where machine is one of:"
     echo "          sc589-mini"
     echo "          sc589-ezkit"
@@ -67,12 +69,33 @@ else
   echo "Error: Please provide a valid machine"
   usage -1
 fi
+# Optional args
+if [ "$1" == "-gu" ]
+then
+  shift
+  GH_REPO_USER=$1
+  shift
+fi
+if [ "$1" == "-gp" ]
+then
+  shift
+  GH_REPO_PASS=$1
+  shift
+fi
+
 BUILD_ARGS="$*"
 
 echo "    REPO: ${REPO_URL}"
 echo "  BRANCH: ${REPO_BRANCH}"
 echo "PLATFORM: ${SCRIPT_TARGET}"
 echo "BB IMAGE: ${BUILD_ARGS}"
+if [ "${GH_REPO_USER}" != "" ]
+then
+  # Left in for debug purposes, don't worry if you use the script correctly Jenkins will mask these lines out
+  echo " GH USER: ${GH_REPO_USER}"
+  echo " GH PASS: ${GH_REPO_PASS}"
+  echo "https://${GH_REPO_USER}:${GH_REPO_PASS}@github.com" >> ~/.git-credentials
+fi
 echo "Sleeping for 5. Hit Ctrl-C if this looks wrong"
 sleep 5
 
