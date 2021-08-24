@@ -74,12 +74,21 @@ if [ "$1" == "-gu" ]
 then
   shift
   GH_REPO_USER=$1
+  if [ "${GH_REPO_USER}" == "null" ]
+  then
+    GH_REPO_USER=""
+  fi
   shift
 fi
 if [ "$1" == "-gp" ]
 then
   shift
   GH_REPO_PASS=$1
+  if [ "${GH_REPO_PASS}" == "null" ]
+  then
+    GH_REPO_PASS=""
+  fi
+
   shift
 fi
 
