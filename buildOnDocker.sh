@@ -105,6 +105,18 @@ then
   echo " GH PASS: ${GH_REPO_PASS}"
   echo "https://${GH_REPO_USER}:${GH_REPO_PASS}@github.com" >> ~/.git-credentials
 fi
+# Check to see if we are in test mode
+if [ "${BUILD_ARGS}" = "test" ]
+then
+  /Emulate what would happen in a typical build. We need to create our artifacts
+  mkdir -p build/tmp/deploy/images
+  touch build/tmp/deploy/images/made_up
+  mkdir -p build/tmp/deploy/licenses
+  touch build/tmp/deploy/licenses/made_up
+  mkdir -p build/tmp/log
+  touch build/tmp/log/made_up
+  exit
+fi
 echo "Sleeping for 5. Hit Ctrl-C if this looks wrong"
 sleep 5
 
