@@ -40,7 +40,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
     python2.7 \
     vim \
     ssh \
-    libusb-1.0.0
+    libusb-1.0.0 \
+    lib32z1
 
 # Set up TFTP
 COPY tftpd-hpa /etc/default/tftpd-hpa
