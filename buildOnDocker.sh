@@ -9,6 +9,7 @@ id
 echo " "
 REPO_URL=https://github.com/analogdevicesinc/lnxdsp-repo-manifest.git
 REPO_BRANCH=develop/g-xp
+REPO_MANIFEST=default.xml
 GIT_EMAIL="win.tee@gmail.com"
 GIT_NAME="ADI Linux Test"
 SCRIPT_TARGET=""
@@ -19,7 +20,7 @@ GH_REPO_USER=""
 GH_REPO_PASS=""
 
 function usage() {
-    echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>] <bitbake commands>"
+    echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>] <bitbake commands>"
     echo "     where machine is one of:"
     echo "          sc589-mini"
     echo "          sc589-ezkit"
@@ -89,6 +90,12 @@ then
     GH_REPO_PASS=""
   fi
 
+  shift
+fi
+if [ "$1" == "-f" ]
+then
+  shift
+  REPO_MANIFEST=$1
   shift
 fi
 
@@ -163,7 +170,7 @@ sudo apt-get install --reinstall ca-certificates
 # Sync repos
 if [ ! -d ${WD}/.repo ]
 then
-    ${WD}/bin/repo init -u ${REPO_URL} -b ${REPO_BRANCH}
+    ${WD}/bin/repo init -u ${REPO_URL} -b ${REPO_BRANCH} -m ${REPO_MANIFEST}
 fi
 ${WD}/bin/repo sync
 
