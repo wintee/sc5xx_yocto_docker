@@ -176,3 +176,4 @@ ${WD}/bin/repo sync
 
 # Set up environment to build
 source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR} && bitbake -q ${BUILD_ARGS}
+chmod -R a+rw build/tmp/deploy
