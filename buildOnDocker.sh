@@ -18,9 +18,11 @@ WORK_DIR="/linux"
 BUILD_DIR="build"
 GH_REPO_USER=""
 GH_REPO_PASS=""
+CONF_APPEND="/linux/conf_append"
+BUILDING_MIRROR=flase
 
 function usage() {
-    echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>] <bitbake commands>"
+    echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>][-mu <mirror url>][-mr ] <bitbake commands>"
     echo "     where machine is one of:"
     echo "          sc589-mini"
     echo "          sc589-ezkit"
@@ -98,6 +100,17 @@ then
   REPO_MANIFEST=$1
   shift
 fi
+if [ "$1" == "-mu" ]
+then
+  shift
+  MIRROR_URL=$1
+  shift
+fi
+if [ "$1" == "-mr" ]
+then
+  BUILDING_MIRROR=true
+  shift
+fi
 
 BUILD_ARGS="$*"
 
@@ -112,10 +125,41 @@ then
   echo " GH PASS: ${GH_REPO_PASS}"
   echo "https://${GH_REPO_USER}:${GH_REPO_PASS}@github.com" >> ~/.git-credentials
 fi
+
+# If building from a mirror
+touch ${CONF_APPEND}    # even if not appending anything to conf, create an empty file so nothing will get appended
+if [ "${MIRROR_URL}" != "" ]
+then
+  echo " MIRROR URL: ${MIRROR_URL}"
+  echo """
+# FORCE IT TO USE OUR MIRROR
+INHERIT += \"own-mirrors\"
+SOURCE_MIRROR_URL = \"${MIRROR_URL}/\${MACHINE}/\"
+PREMIRRORS_prepend = \" \\
+	git://.*/.*   \${SOURCE_MIRROR_URL} \\n \\
+	ftp://.*/.*   \${SOURCE_MIRROR_URL} \\n \\
+	http://.*/.*  \${SOURCE_MIRROR_URL} \\n \\
+	https://.*/.* \${SOURCE_MIRROR_URL} \\n \"
+BB_FETCH_PREMIRRORONLY = \"1\"
+
+# USE THE GIVEN SRC REVS:""" > ${CONF_APPEND}
+  curl ${MIRROR_URL}/adsp-${SCRIPT_TARGET}/src_revs >> ${CONF_APPEND}
+fi
+# If building a mirror
+if $BUILDING_MIRROR
+then
+  echo """
+# COLLECT TARBALLS TO BUILD A MIRROR AND DOCUMENT THE PACKAGE VERSIONS FOR PACKAGES WITH AUTOREV
+INHERIT += \" buildhistory \"
+DL_DIR = \"${WORK_DIR}/${BUILD_DIR}/downloads\"
+BB_GENERATE_MIRROR_TARBALLS = \"1\"
+""" >> ${CONF_APPEND}
+fi
+
 # Check to see if we are in test mode
 if [ "${BUILD_ARGS}" = "test" ]
 then
-  /Emulate what would happen in a typical build. We need to create our artifacts
+  # Emulate what would happen in a typical build. We need to create our artifacts
   mkdir -p build/tmp/deploy/images
   touch build/tmp/deploy/images/made_up
   mkdir -p build/tmp/deploy/licenses
@@ -175,5 +219,14 @@ fi
 ${WD}/bin/repo sync
 
 # Set up environment to build
-source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR} && bitbake -q ${BUILD_ARGS}
-chmod -R a+rw ${WORK_DIR}/${BUILD_DIR}/tmp/deploy
+source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR}   && \
+cat ${CONF_APPEND} >> conf/local.conf                          && \
+bitbake -q ${BUILD_ARGS}
+
+if $BUILDING_MIRROR
+then
+  buildhistory-collect-srcrevs -a > "${WORK_DIR}/${BUILD_DIR}/downloads/src_revs"
+  chmod -R a+rw ${WORK_DIR}/${BUILD_DIR}/downloads
+else
+  chmod -R a+rw ${WORK_DIR}/${BUILD_DIR}/tmp/deploy
+fi
