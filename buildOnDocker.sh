@@ -19,7 +19,7 @@ BUILD_DIR="build"
 GH_REPO_USER=""
 GH_REPO_PASS=""
 CONF_APPEND="/linux/conf_append"
-BUILDING_MIRROR=flase
+BUILDING_MIRROR=false
 
 function usage() {
     echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>][-mu <mirror url>][-mr ] <bitbake commands>"
