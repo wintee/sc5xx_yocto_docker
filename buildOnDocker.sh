@@ -222,7 +222,7 @@ ${WD}/bin/repo sync
 source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR}   && \
 cat ${CONF_APPEND} >> conf/local.conf                          && \
 bitbake -q ${BUILD_ARGS}
-
+RES=$?
 if $BUILDING_MIRROR
 then
   buildhistory-collect-srcrevs -a > "${WORK_DIR}/${BUILD_DIR}/downloads/src_revs"
@@ -230,3 +230,4 @@ then
 else
   chmod -R a+rw ${WORK_DIR}/${BUILD_DIR}/tmp/deploy
 fi
+exit ${RES}
