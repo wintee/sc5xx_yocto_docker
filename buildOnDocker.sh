@@ -18,8 +18,8 @@ WORK_DIR="/linux"
 BUILD_DIR="build"
 GH_REPO_USER=""
 GH_REPO_PASS=""
-CONF_APPEND="/linux/conf_append"
 BUILDING_MIRROR=false
+USE_SOURCE_MIRROR=false
 
 function usage() {
     echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>][-mu <mirror url>][-mr ] <bitbake commands>"
@@ -100,10 +100,9 @@ then
   REPO_MANIFEST=$1
   shift
 fi
-if [ "$1" == "-mu" ]
+if [ "$1" == "-sm" ]
 then
-  shift
-  MIRROR_URL=$1
+  USE_SOURCE_MIRROR=true
   shift
 fi
 if [ "$1" == "-mr" ]
@@ -114,10 +113,11 @@ fi
 
 BUILD_ARGS="$*"
 
-echo "    REPO: ${REPO_URL}"
-echo "  BRANCH: ${REPO_BRANCH}"
-echo "PLATFORM: ${SCRIPT_TARGET}"
-echo "BB IMAGE: ${BUILD_ARGS}"
+echo "  REPO      : ${REPO_URL}"
+echo "  BRANCH    : ${REPO_BRANCH}"
+echo "  MANIFEST  : ${REPO_MANIFEST}"
+echo "  PLATFORM  : ${SCRIPT_TARGET}"
+echo "  BB IMAGE  : ${BUILD_ARGS}"
 if [ "${GH_REPO_USER}" != "" ]
 then
   # Left in for debug purposes, don't worry if you use the script correctly Jenkins will mask these lines out
@@ -126,25 +126,6 @@ then
   echo "https://${GH_REPO_USER}:${GH_REPO_PASS}@github.com" >> ~/.git-credentials
 fi
 
-# If building from a mirror
-touch ${CONF_APPEND}    # even if not appending anything to conf, create an empty file so nothing will get appended
-if [ "${MIRROR_URL}" != "" ]
-then
-  echo " MIRROR URL: ${MIRROR_URL}"
-  echo """
-# FORCE IT TO USE OUR MIRROR
-INHERIT += \"own-mirrors\"
-SOURCE_MIRROR_URL = \"${MIRROR_URL}/\${MACHINE}/\"
-PREMIRRORS_prepend = \" \\
-	git://.*/.*   \${SOURCE_MIRROR_URL} \\n \\
-	ftp://.*/.*   \${SOURCE_MIRROR_URL} \\n \\
-	http://.*/.*  \${SOURCE_MIRROR_URL} \\n \\
-	https://.*/.* \${SOURCE_MIRROR_URL} \\n \"
-BB_FETCH_PREMIRRORONLY = \"1\"
-
-# USE THE GIVEN SRC REVS:""" > ${CONF_APPEND}
-  curl ${MIRROR_URL}/adsp-${SCRIPT_TARGET}/src_revs >> ${CONF_APPEND}
-fi
 # If building a mirror
 if $BUILDING_MIRROR
 then
@@ -219,8 +200,22 @@ fi
 ${WD}/bin/repo sync
 
 # Set up environment to build
-source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR}   && \
-cat ${CONF_APPEND} >> conf/local.conf                          && \
+source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR}
+# If building from a mirror
+if $USE_SOURCE_MIRROR
+then
+    # Change DL_DIR from '/home/$USERNAME/$TOPDIR/downloads' to "/local/mounted/source-mirror/"
+    sed -i -e 's/^DL_DIR\s?=.*$/DL_DIR ?= '\''\/local\/mounted\/source-mirror\/'\''/' conf/local.conf
+    # Append MIRROR_SERVER = "file:///local/mounted/"
+    sed -i -e '/^DL_DIR\s?=/a\' -e 'MIRROR_SERVER = "file:///local/mounted/"' conf/local.conf
+    # Append SOURCE_MIRROR_URL = "${MIRROR_SERVER}/source-mirror"
+    sed -i -e '/^MIRROR_SERVER\s=/a\' -e 'SOURCE_MIRROR_URL = "${MIRROR_SERVER}/source-mirror"' conf/local.conf
+    # Append UNINATIVE_URL = "${SOURCE_MIRROR_URL}"
+    sed -i -e '/^SOURCE_MIRROR_URL\s=/a\' -e 'UNINATIVE_URL = "${SOURCE_MIRROR_URL}"' conf/local.conf
+    # Append INHERIT += "own-mirrors"
+    sed -i -e '/^UNINATIVE_URL\s=/a\' -e 'INHERIT += "own-mirrors"' conf/local.conf
+fi
+
 bitbake -q ${BUILD_ARGS}
 RES=$?
 if $BUILDING_MIRROR
