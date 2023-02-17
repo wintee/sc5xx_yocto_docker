@@ -20,6 +20,7 @@ GH_REPO_USER=""
 GH_REPO_PASS=""
 BUILDING_MIRROR=false
 USE_SOURCE_MIRROR=false
+USE_SSTATE_CACHE_MIRROR=false
 
 function usage() {
     echo "$0: -r <repo> -b <branch> -m <machine> [-gu <github user> -gp <github password>][-f <manifest file>][-mu <mirror url>][-mr ] <bitbake commands>"
@@ -91,7 +92,6 @@ then
   then
     GH_REPO_PASS=""
   fi
-
   shift
 fi
 if [ "$1" == "-f" ]
@@ -103,6 +103,11 @@ fi
 if [ "$1" == "-sm" ]
 then
   USE_SOURCE_MIRROR=true
+  shift
+fi
+if [ "$1" == "-cm" ]
+then
+  USE_SSTATE_CACHE_MIRROR=true
   shift
 fi
 if [ "$1" == "-mr" ]
@@ -118,6 +123,8 @@ echo "  BRANCH    : ${REPO_BRANCH}"
 echo "  MANIFEST  : ${REPO_MANIFEST}"
 echo "  PLATFORM  : ${SCRIPT_TARGET}"
 echo "  BB IMAGE  : ${BUILD_ARGS}"
+echo "  USE_SOURCE_MIRROR  : ${USE_SOURCE_MIRROR}"
+echo "  USE_SSTATE_CACHE_MIRROR  : ${USE_SSTATE_CACHE_MIRROR}"
 if [ "${GH_REPO_USER}" != "" ]
 then
   # Left in for debug purposes, don't worry if you use the script correctly Jenkins will mask these lines out
@@ -214,6 +221,22 @@ then
     sed -i -e '/^SOURCE_MIRROR_URL\s=/a\' -e 'UNINATIVE_URL = "${SOURCE_MIRROR_URL}"' conf/local.conf
     # Append INHERIT += "own-mirrors"
     sed -i -e '/^UNINATIVE_URL\s=/a\' -e 'INHERIT += "own-mirrors"' conf/local.conf
+
+    if $USE_SSTATE_CACHE_MIRROR
+    then
+      # Append SSTATE_MIRRORS = "\file://.* ${MIRROR_SERVER}/sstate-cache/PATH;\downloadfilename=PATH \n \"
+      sed -i -e '/^INHERIT\s+=/a\' -e 'SSTATE_MIRRORS = "\\ \nfile://.* ${MIRROR_SERVER}/sstate-cache/PATH;\\\ndownloadfilename=PATH \\n \\ \n"' conf/local.conf
+    fi
+else
+    # If SSTATE_MIRROR is ON, but SOURCE_MIRROR is OFF, the SSTATE_MIRRORS string should be appended after the MIRROR_SERVER one. The 'INHERIT += ''
+    # string of the above clause will not exist to be found, so it cannot be used in this case
+    if $USE_SSTATE_CACHE_MIRROR
+    then
+      # Append MIRROR_SERVER = "file:///local/mounted/"
+      sed -i -e '/^DL_DIR\s?=/a\' -e 'MIRROR_SERVER = "file:///local/mounted/"' conf/local.conf
+      # Append SSTATE_MIRRORS = "\file://.* ${MIRROR_SERVER}/sstate-cache/PATH;\downloadfilename=PATH \n \"
+      sed -i -e '/^MIRROR_SERVER\s=/a\' -e 'SSTATE_MIRRORS = "\\ \nfile://.* ${MIRROR_SERVER}/sstate-cache/PATH;\\\ndownloadfilename=PATH \\n \\ \n"' conf/local.conf
+    fi
 fi
 
 bitbake -q ${BUILD_ARGS}
