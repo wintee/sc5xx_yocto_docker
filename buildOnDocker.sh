@@ -211,7 +211,8 @@ ${WD}/bin/repo sync
 
 # Set up environment to build
 source ./setup-environment -m adsp-${SCRIPT_TARGET} -b ${BUILD_DIR}
-# If building from a mirror
+
+# If using a source mirror
 if $USE_SOURCE_MIRROR
 then
     # Change DL_DIR from '/home/$USERNAME/$TOPDIR/downloads' to "/local/mounted/source-mirror/"
@@ -224,22 +225,13 @@ then
     sed -i -e '/^SOURCE_MIRROR_URL\s=/a\' -e 'UNINATIVE_URL = "${SOURCE_MIRROR_URL}"' conf/local.conf
     # Append INHERIT += "own-mirrors"
     sed -i -e '/^UNINATIVE_URL\s=/a\' -e 'INHERIT += "own-mirrors"' conf/local.conf
+fi
 
-    if $USE_SSTATE_CACHE_MIRROR
-    then
-      # Append SSTATE_MIRRORS = "\file://.* ${MIRROR_SERVER}/sstate-cache/PATH;\downloadfilename=PATH \n \"
-      sed -i -e '/^INHERIT\s+=/a\' -e 'SSTATE_MIRRORS = "\\ \nfile://.* ${MIRROR_SERVER}/sstate-cache/PATH;\\\ndownloadfilename=PATH \\n \\ \n"' conf/local.conf
-    fi
-else
-    # If SSTATE_MIRROR is ON, but SOURCE_MIRROR is OFF, the SSTATE_MIRRORS string should be appended after the MIRROR_SERVER one. The 'INHERIT += ''
-    # string of the above clause will not exist to be found, so it cannot be used in this case
-    if $USE_SSTATE_CACHE_MIRROR
-    then
-      # Append MIRROR_SERVER = "file:///local/mounted/"
-      sed -i -e '/^DL_DIR\s?=/a\' -e 'MIRROR_SERVER = "file:///local/mounted/"' conf/local.conf
-      # Append SSTATE_MIRRORS = "\file://.* ${MIRROR_SERVER}/sstate-cache/PATH;\downloadfilename=PATH \n \"
-      sed -i -e '/^MIRROR_SERVER\s=/a\' -e 'SSTATE_MIRRORS = "\\ \nfile://.* ${MIRROR_SERVER}/sstate-cache/PATH;\\\ndownloadfilename=PATH \\n \\ \n"' conf/local.conf
-    fi
+# If using shared sstate cache
+if $USE_SSTATE_CACHE_MIRROR
+then
+  # Change SSTATE_DIR to "local/mounted/sstate-cache"
+  sed -i -e 's/^SSTATE_DIR\s?=.*$/SSTATE_DIR ?= '\''\/local\/mounted\/sstate-cache\/'\''/' conf/local.conf
 fi
 
 bitbake -q ${BUILD_ARGS}
